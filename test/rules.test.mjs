@@ -58,6 +58,20 @@ const CASES = [
     text: 'Selamat! Anda menang hadiah 10 juta. Kirim 500000 untuk klaim hadiah.',
     verdict: 'high',
     mustInclude: ['prize', 'money_request', 'advance_fee']
+  },
+  {
+    name: 'job offer that charges a fee first',
+    text: 'Work from home! Earn 3000 USD monthly. Pay 500 KSH registration fee to activate your account.',
+    verdict: 'high',
+    mustInclude: ['easy_money_job', 'money_request', 'job_fee']
+  },
+  {
+    // Regression: a real bank warning tells you NOT to share a PIN, which used
+    // to score 84 (high) because both "PIN" and "do not share" matched.
+    name: 'genuine bank message that warns you never to share a PIN',
+    text: 'Your M-PESA statement for September is ready. Dial *334# to view it. Do not share your PIN with anyone.',
+    verdict: 'low',
+    mustInclude: []
   }
 ]
 

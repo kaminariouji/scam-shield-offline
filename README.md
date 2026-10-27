@@ -14,7 +14,7 @@ Scam Shield runs the whole check on the device: no API key, no account, no uploa
 
 ## What it does
 
-1. **Rule engine** (`src/rules.mjs`) — nine weighted patterns plus link forensics. It looks for requests for PINs/OTPs/seed phrases, artificial urgency, prizes you never entered, advance-fee demands, brand impersonation, guaranteed-profit pitches, generic greetings, secrecy requests and account-suspension threats. Links are inspected for shorteners, punycode, raw IPs, low-reputation TLDs, look-alike brand domains and hyphen stuffing. Combinations that are fraud on their own (a prize plus a fee) are scored as one pattern. The result is a 0–100 score and a verdict band.
+1. **Rule engine** (`src/rules.mjs`) — ten weighted patterns plus link forensics. It looks for requests for PINs/OTPs/seed phrases, artificial urgency, prizes you never entered, advance-fee demands, brand impersonation, guaranteed-profit pitches, generic greetings, secrecy requests, account-suspension threats and easy-money job offers. It also knows the difference between a scammer asking for a PIN and a real bank telling you never to share one. Links are inspected for shorteners, punycode, raw IPs, low-reputation TLDs, look-alike brand domains and hyphen stuffing. Combinations that are fraud on their own (a prize plus a fee) are scored as one pattern. The result is a 0–100 score and a verdict band.
 2. **Local explanation** (`src/model.mjs`) — Llama 3.2 1B Instruct (Q4_0) runs through the [QVAC SDK](https://docs.qvac.tether.io/) on the CPU and writes two lines: *why the worst flag matters* and *what to do next*.
 
 The model never reads the suspect message. It only receives the red flags the rule engine already found. That keeps a 1B model on-task, and it stops safety refusals from swallowing the answer — a 1B model asked to analyse a real extortion message tends to reply "I can't help with this request".
@@ -37,7 +37,7 @@ npm start
 Open http://127.0.0.1:7777 and paste a message. The first start downloads the model once.
 
 ```bash
-npm test        # 11 rule-engine tests, no model needed
+npm test        # 13 rule-engine tests, no model needed
 ```
 
 To prove it is offline, disable networking before you press **Check offline**. The page is served from localhost and the model is already on disk, so the scan still works.
@@ -95,7 +95,7 @@ curl -s -m 3 https://example.com   # fails: could not resolve host
 npm start
 ```
 
-The recording itself used the softer version of the same idea: the browser was started with `--host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1"`, so every host except loopback resolved to a black hole. Both variants prove the same thing — after the one-time model download the app never opens a socket, so cutting the network changes nothing. The rule tests need no model and no network at all: `npm test` prints `# pass 11`.
+The recording itself used the softer version of the same idea: the browser was started with `--host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1"`, so every host except loopback resolved to a black hole. Both variants prove the same thing — after the one-time model download the app never opens a socket, so cutting the network changes nothing. The rule tests need no model and no network at all: `npm test` prints `# pass 13`.
 
 ## Limits, stated plainly
 

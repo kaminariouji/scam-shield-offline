@@ -52,7 +52,15 @@ const RULES = [
     id: 'secrecy',
     weight: 16,
     label: 'Asks you to keep it secret or not tell anyone',
-    re: /(?:\bdo not (?:tell|share|disclose)\b|\bkeep (?:this|it) (?:secret|confidential)\b|\bbetween (?:you and me|us)\b|\busimwambie\b|\bjangan (?:bilang|beri tahu)\b)/i
+    // The object matters: "do not share your PIN" is a safety warning from a
+    // real bank, while "do not tell anyone" is the scam asking for silence.
+    re: /(?:\bdo not (?:tell|share|disclose)\s+(?:this|it|anyone|anybody|our|the|these|them)\b|\bkeep (?:this|it) (?:secret|confidential)\b|\bbetween (?:you and me|us)\b|\busimwambie\b|\bjangan (?:bilang|beri tahu)\b)/i
+  },
+  {
+    id: 'easy_money_job',
+    weight: 18,
+    label: 'Offers easy money — a job or income that pays far too well for the effort',
+    re: /(?:\bwork from home\b(?=[\s\S]{0,80}\b(?:earn|paid|income)\b)|\bearn (?:up to )?[\d,]+(?:\s?(?:usd|ksh|kes|tzs|ngn|idr|rp))?\s?(?:monthly|per month|a month|weekly|per week|daily|per day|a day)\b|\bno experience (?:needed|required)\b|\bdaily pay(?:ment)?\b)/i
   },
   {
     id: 'account_threat',
@@ -103,14 +111,22 @@ function inspectLink (raw) {
   return { host, flags }
 }
 
+// "Do not share your PIN" is the opposite of asking for a PIN. Look at the few
+// words in front of the match before counting it as a request.
+function isSafetyWarning (text, index) {
+  const before = text.slice(Math.max(0, index - 70), index)
+  return /(?:do not|don't|never|we (?:will )?never|hautaki|usitume|jangan)\s+(?:share|give|send|reveal|disclose|provide|ask (?:for|you for)|tell)\b[^.!?]{0,30}$/i.test(before)
+}
+
 export function analyzeRules (text) {
   const hits = []
   let score = 0
   for (const r of RULES) {
-    if (r.re.test(text)) {
-      hits.push({ id: r.id, label: r.label, weight: r.weight })
-      score += r.weight
-    }
+    const m = r.re.exec(text)
+    if (!m) continue
+    if (r.id === 'credentials' && isSafetyWarning(text, m.index)) continue
+    hits.push({ id: r.id, label: r.label, weight: r.weight })
+    score += r.weight
   }
 
   const has = (id) => hits.some((h) => h.id === id)
@@ -124,6 +140,10 @@ export function analyzeRules (text) {
   if (has('money_request') && has('crypto_promise')) {
     hits.push({ id: 'investment_fee', label: 'Investment pitch that needs your deposit first', weight: 12 })
     score += 12
+  }
+  if (has('money_request') && has('easy_money_job')) {
+    hits.push({ id: 'job_fee', label: 'A job offer that needs your money before it pays you', weight: 16 })
+    score += 16
   }
   if (has('impersonation') && has('credentials')) {
     hits.push({ id: 'brand_pin', label: 'A known brand asking for a secret it should never need', weight: 10 })
