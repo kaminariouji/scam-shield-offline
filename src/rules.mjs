@@ -77,7 +77,9 @@ const OFFICIAL = ['safaricom.co.ke','m-pesa.safaricom.co.ke','airtel.co.ke','equ
 
 function extractLinks (text) {
   const out = []
-  const re = /\b((?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s,;!?)]*)?)/gi
+  // IPv4 first: a raw address has no TLD, so the domain branch never saw it and
+  // the raw-IP check below was unreachable.
+  const re = /\b((?:https?:\/\/)?(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:\/[^\s,;!?)]*)?|(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[^\s,;!?)]*)?)/gi
   let m
   while ((m = re.exec(text)) !== null) {
     const raw = m[1].replace(/[.,;:]+$/, '')
@@ -90,7 +92,7 @@ function extractLinks (text) {
 
 function inspectLink (raw) {
   const clean = raw.replace(/^https?:\/\//i, '').toLowerCase()
-  const host = clean.split('/')[0]
+  const host = clean.split('/')[0].split(':')[0]
   const flags = []
   if (SHORTENERS.has(host)) flags.push('shortened link hides the real destination')
   if (host.startsWith('xn--') || host.includes('.xn--')) flags.push('punycode host can imitate another brand')
@@ -141,6 +143,10 @@ export function analyzeRules (text) {
     hits.push({ id: 'investment_fee', label: 'Investment pitch that needs your deposit first', weight: 12 })
     score += 12
   }
+  if (has('prize') && has('urgency')) {
+    hits.push({ id: 'prize_deadline', label: 'A prize you never entered, with a deadline attached', weight: 10 })
+    score += 10
+  }
   if (has('money_request') && has('easy_money_job')) {
     hits.push({ id: 'job_fee', label: 'A job offer that needs your money before it pays you', weight: 16 })
     score += 16
@@ -153,7 +159,8 @@ export function analyzeRules (text) {
   const links = extractLinks(text).map((raw) => ({ raw, ...inspectLink(raw) }))
   for (const l of links) {
     if (l.flags.length) {
-      const w = Math.min(30, l.flags.length * 12)
+      let w = Math.min(30, l.flags.length * 12)
+      if (l.flags.some((f) => f.includes('punycode'))) w = Math.min(30, w + 16)
       hits.push({ id: 'link:' + l.host, label: 'Link ' + l.host + ': ' + l.flags.join(', '), weight: w })
       score += w
     }

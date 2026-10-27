@@ -37,7 +37,7 @@ npm start
 Open http://127.0.0.1:7777 and paste a message. The first start downloads the model once.
 
 ```bash
-npm test        # 13 rule-engine tests, no model needed
+npm test        # 15 rule-engine tests, no model needed
 ```
 
 To prove it is offline, disable networking before you press **Check offline**. The page is served from localhost and the model is already on disk, so the scan still works.
@@ -95,7 +95,7 @@ curl -s -m 3 https://example.com   # fails: could not resolve host
 npm start
 ```
 
-The recording itself used the softer version of the same idea: the browser was started with `--host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1"`, so every host except loopback resolved to a black hole. Both variants prove the same thing — after the one-time model download the app never opens a socket, so cutting the network changes nothing. The rule tests need no model and no network at all: `npm test` prints `# pass 13`.
+The recording itself used the softer version of the same idea: the browser was started with `--host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1"`, so every host except loopback resolved to a black hole. Both variants prove the same thing — after the one-time model download the app never opens a socket, so cutting the network changes nothing. The rule tests need no model and no network at all: `npm test` prints `# pass 15`.
 
 ## Limits, stated plainly
 

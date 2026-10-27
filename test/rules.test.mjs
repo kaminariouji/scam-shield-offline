@@ -72,6 +72,20 @@ const CASES = [
     text: 'Your M-PESA statement for September is ready. Dial *334# to view it. Do not share your PIN with anyone.',
     verdict: 'low',
     mustInclude: []
+  },
+  {
+    // Regression: the link extractor needed a TLD, so a raw IPv4 address never
+    // reached the raw-IP check at all.
+    name: 'raw IP address in a link',
+    text: 'Click http://41.90.64.2/login to verify your account now.',
+    verdict: 'caution',
+    mustInclude: ['account_threat']
+  },
+  {
+    name: 'prize with a deadline, written in capitals',
+    text: 'CONGRATULATIONS YOU ARE A WINNER CLAIM YOUR PRIZE NOW CALL US IMMEDIATELY!!!!',
+    verdict: 'high',
+    mustInclude: ['prize', 'urgency', 'prize_deadline']
   }
 ]
 
