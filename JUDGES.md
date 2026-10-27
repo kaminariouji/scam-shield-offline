@@ -44,6 +44,8 @@ The model never reads the suspect message. It receives only the red flags the ru
 - **15 tests**, all passing.
 - Test device: AMD Ryzen 5 3600X, 32 GB RAM, Windows 11 Pro x64, Node.js 24.21. Model load ≈9 s warm / ≈27 s cold; a scan takes well under a second. Roughly 1 GB of free RAM on top of the ~90 MB Node process.
 
+The DoraHacks submission text was written before the last two hardening rounds and still says "nine rules" and "eight tests". The numbers above are the current code; `npm test` is the authority.
+
 ## 5. What still needs a network
 
 Only two steps, both one-time setup: `npm install` and the first model download. After that the machine can be disconnected. There is no analytics, telemetry or update check.
