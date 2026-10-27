@@ -2,6 +2,8 @@
 
 Paste a suspicious SMS, WhatsApp message or email and get a second opinion **without the message ever leaving the machine**. A deterministic red-flag engine runs first, then a local language model explains the strongest finding and the safest next step.
 
+A 28-second recording of the app working with every host except `127.0.0.1` blocked is on the [demo page](https://scam-shield-offline.pages.dev) and in [media/demo.mp4](media/demo.mp4).
+
 Built for the [AI Yako: Own Your AI hackathon](https://dorahacks.io/hackathon/2452) (Track 1, offline AI apps), hosted with Node NBO in Nairobi, 24–31 October 2026.
 
 ## Why
