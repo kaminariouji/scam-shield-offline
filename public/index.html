@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Scam Shield Offline</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #111820;
+    --line: #1e2a36;
+    --ink: #e6edf3;
+    --dim: #8b9bab;
+    --high: #ff5d5d;
+    --caution: #ffb020;
+    --low: #2ecc71;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 28px 20px 64px; }
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  h1 { font-size: 21px; margin: 0; letter-spacing: -0.01em; }
+  .tag { font-size: 12px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; }
+  .sub { color: var(--dim); font-size: 13.5px; margin: 0 0 22px; max-width: 640px; }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  @media (min-width: 820px) { .grid { grid-template-columns: 1.05fr 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); margin-bottom: 8px; }
+  textarea {
+    width: 100%; min-height: 210px; resize: vertical; background: #0a0e13; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  textarea:focus { outline: 2px solid #2b6cb0; outline-offset: 1px; }
+  .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  button {
+    background: #1f6feb; color: #fff; border: 0; border-radius: 9px; padding: 10px 18px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  button:disabled { opacity: 0.55; cursor: progress; }
+  button.ghost { background: transparent; color: var(--dim); border: 1px solid var(--line); font-weight: 500; }
+  .hint { color: var(--dim); font-size: 12.5px; }
+  .verdict { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .dial { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 17px; border: 4px solid var(--line); }
+  .v-label { font-size: 17px; font-weight: 650; }
+  .v-score { color: var(--dim); font-size: 12.5px; }
+  ul.flags { list-style: none; padding: 0; margin: 0; }
+  ul.flags li { display: flex; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+  ul.flags li:first-child { border-top: 0; }
+  .w { color: var(--dim); font-size: 11.5px; min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  .reason { white-space: pre-wrap; font: 13.5px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; color: #cfe0ef; }
+  .empty { color: var(--dim); font-size: 13.5px; }
+  footer { margin-top: 26px; color: var(--dim); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 14px; }
+  code { background: #0a0e13; border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Scam Shield Offline</h1>
+    <span class="tag">runs on this machine</span>
+    <span class="tag">no internet needed</span>
+  </header>
+  <p class="sub">Paste a suspicious SMS, WhatsApp message or email. A local rules engine and a local language model read it on your own hardware. Nothing is uploaded, because there is nothing to upload to.</p>
+
+  <div class="grid">
+    <section class="panel">
+      <label for="msg">The message</label>
+      <textarea id="msg" placeholder="Dear customer, your M-PESA account will be suspended. Verify within 24 hours at http://mpesa-verify.top and send your PIN..."></textarea>
+      <div class="row">
+        <button id="go">Check offline</button>
+        <button id="demo" class="ghost">Load example</button>
+        <span class="hint" id="status"></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="verdict">
+        <div class="dial" id="dial">--</div>
+        <div>
+          <div class="v-label" id="vlabel">Waiting for a message</div>
+          <div class="v-score" id="vscore">Deterministic rules run first, the model explains after.</div>
+        </div>
+      </div>
+      <label>Red flags</label>
+      <ul class="flags" id="flags"><li class="empty">No scan yet.</li></ul>
+      <label style="margin-top:16px">Local model's read</label>
+      <div class="reason" id="reason"><span class="empty">The 1B model runs on your CPU. First run loads it once.</span></div>
+    </section>
+  </div>
+
+  <footer>
+    Rule engine: <code>src/rules.mjs</code> &middot; model: QVAC SDK + Llama 3.2 1B Instruct (Q4_0), CPU only &middot;
+    This is a second opinion, not a guarantee. Never share a PIN, OTP or seed phrase with anyone.
+  </footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id)
+const COLORS = { high: 'var(--high)', caution: 'var(--caution)', low: 'var(--low)' }
+const LABELS = { high: 'Almost certainly a scam', caution: 'Treat with caution', low: 'No obvious red flags' }
+
+const EXAMPLE = 'Dear Customer, Your M-PESA account will be suspended today. A transaction of KSH 12,400 is pending. Verify your identity immediately at http://mpesa-secure-verify.top/login and enter your PIN to cancel. Do not tell anyone about this message. Customer Care.'
+
+$('demo').onclick = () => { $('msg').value = EXAMPLE; $('msg').focus() }
+
+$('go').onclick = async () => {
+  const text = $('msg').value.trim()
+  if (!text) { $('status').textContent = 'Paste a message first.'; return }
+  $('go').disabled = true
+  $('status').textContent = 'Rules...'
+  const t0 = performance.now()
+  try {
+    const res = await fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'scan failed')
+    render(data)
+    $('status').textContent = 'done in ' + Math.round(performance.now() - t0) + ' ms'
+  } catch (e) {
+    $('status').textContent = 'error: ' + e.message
+  } finally {
+    $('go').disabled = false
+  }
+}
+
+function render (data) {
+  const r = data.rules
+  $('dial').textContent = r.score
+  $('dial').style.borderColor = COLORS[r.verdict]
+  $('dial').style.color = COLORS[r.verdict]
+  $('vlabel').textContent = LABELS[r.verdict]
+  $('vlabel').style.color = COLORS[r.verdict]
+  $('vscore').textContent = 'Rule score ' + r.score + '/100 from ' + r.hits.length + ' signal' + (r.hits.length === 1 ? '' : 's')
+
+  const ul = $('flags')
+  ul.innerHTML = ''
+  if (!r.hits.length) {
+    ul.innerHTML = '<li class="empty">Nothing matched. That does not make a message safe.</li>'
+  } else {
+    for (const h of r.hits) {
+      const li = document.createElement('li')
+      const w = document.createElement('span'); w.className = 'w'; w.textContent = '+' + h.weight
+      const s = document.createElement('span'); s.textContent = h.label
+      li.append(w, s)
+      ul.append(li)
+    }
+  }
+  const llm = data.llm || {}
+  const parts = []
+  if (llm.why) parts.push('WHY  ' + llm.why)
+  if (llm.action) parts.push('DO   ' + llm.action)
+  if (llm.risk) parts.push('MODEL RISK  ' + llm.risk)
+  $('reason').textContent = parts.length ? parts.join('\n\n') : '(the model returned nothing usable; trust the flags)'
+}
+</script>
+</body>
+</html>
