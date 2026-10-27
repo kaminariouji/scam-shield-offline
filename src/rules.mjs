@@ -25,7 +25,10 @@ const RULES = [
     id: 'money_request',
     weight: 26,
     label: 'Asks you to send money or pay a fee to unlock something',
-    re: /(?:\bsend (?:money|cash|funds|\d|your (?:id|details))\b|\bpay (?:now|a fee|the fee|\d|to (?:unlock|release|activate))|\bregistration fee\b|\bactivation fee\b|\bprocessing fee\b|\bclearance fee\b|\bcustoms fee\b|\bdeposit\b|\btop ?up\b|\btuma (?:pesa|hela)\b|\blipa\b|\bkirim (?:uang|dana)\b|\btransfer ke\b)/i
+    // Amounts are matched as `\s+\d+` on purpose: a trailing \b after a single
+    // digit never fires inside a number ("send 2000" would stop at "2"), which
+    // is how an advance-fee message once scored low.
+    re: /(?:\bsend (?:money|cash|funds|your (?:id|details))\b|\bsend\s+(?:us\$|\$|ksh|kes|tzs|ngn|rp|idr)?\s?\d+|\bpay (?:now|a fee|the fee|to (?:unlock|release|activate))\b|\bpay\s+(?:us\$|\$|ksh|kes|tzs|ngn|rp|idr)?\s?\d+|\bregistration fee\b|\bactivation fee\b|\bprocessing fee\b|\bclearance fee\b|\bcustoms fee\b|\bdeposit\b|\btop ?up\b|\btuma (?:pesa|hela)\b|\btuma\s+(?:ksh|kes|tzs)?\s?\d+|\blipa\b|\blipa\s+(?:ksh|kes|tzs)?\s?\d+|\bkirim (?:uang|dana)\b|\bkirim\s+(?:rp|idr)?\s?\d+|\btransfer ke\b)/i
   },
   {
     id: 'impersonation',

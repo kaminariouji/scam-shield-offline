@@ -2,7 +2,7 @@
 
 Paste a suspicious SMS, WhatsApp message or email and get a second opinion **without the message ever leaving the machine**. A deterministic red-flag engine runs first, then a local language model explains the strongest finding and the safest next step.
 
-A 28-second recording of the app working with every host except `127.0.0.1` blocked is on the [demo page](https://scam-shield-offline.pages.dev) and in [media/demo.mp4](media/demo.mp4).
+A 39-second recording of the app working with every host except `127.0.0.1` blocked is on the [demo page](https://scam-shield-offline.pages.dev) and in [media/demo.mp4](media/demo.mp4). It shows two messages: one extortion attempt that scores high, and one ordinary delivery notice that scores low, both answered by the local model with the network blocked.
 
 Built for the [AI Yako: Own Your AI hackathon](https://dorahacks.io/hackathon/2452) (Track 1, offline AI apps), hosted with Node NBO in Nairobi, 24–31 October 2026.
 
@@ -22,8 +22,10 @@ The model never reads the suspect message. It only receives the red flags the ru
 ## Requirements
 
 - Node.js 22.17 or newer
-- About 1 GB of disk for the model (downloaded once, then cached)
-- No GPU needed. QVAC's Vulkan path is supported but the app pins `device: 'cpu'` and `gpu_layers: 0` so it behaves the same on every machine. On the test machine (Ryzen 5 3600X, 32 GB RAM) the model loads in about 9 seconds and a scan takes well under a second after that.
+- About 740 MB of disk for the model — the cached file is 773,025,824 bytes (downloaded once, then reused)
+- No GPU needed. QVAC's Vulkan path is supported but the app pins `device: 'cpu'` and `gpu_layers: 0` so it behaves the same on every machine.
+- **Test device:** desktop PC, AMD Ryzen 5 3600X, 32 GB RAM, **Windows 11 Pro (x64)**, Node.js 24.21. The model loads in about 9 seconds when the weights are already in the OS file cache and about 27 seconds cold; a scan then takes well under a second. The Node process measures about 90 MB resident and the model itself runs in the separate QVAC worker, so plan for roughly 1 GB of free RAM on top of that.
+- **Model licence:** Llama 3.2 1B Instruct is used under the [Llama 3.2 Community License](https://www.llama.com/llama3_2/license/). The QVAC SDK is Apache-2.0. No model weights are redistributed in this repository — they are pulled from the QVAC registry on first run.
 
 ## Run it
 
@@ -35,7 +37,7 @@ npm start
 Open http://127.0.0.1:7777 and paste a message. The first start downloads the model once.
 
 ```bash
-npm test        # 8 rule-engine tests, no model needed
+npm test        # 11 rule-engine tests, no model needed
 ```
 
 To prove it is offline, disable networking before you press **Check offline**. The page is served from localhost and the model is already on disk, so the scan still works.
@@ -61,6 +63,39 @@ To prove it is offline, disable networking before you press **Check offline**. T
 - Inference is streamed token by token, so the UI could show it as it arrives.
 
 Everything else — scoring, link forensics, the verdict — is plain JavaScript with no network calls.
+
+## What still needs a network
+
+Everything the app does for the user runs offline. The complete list of network-dependent steps is:
+
+1. `npm install` — fetches `@qvac/sdk` and its dependencies from npm (once, at setup).
+2. The first `npm start` — the QVAC SDK pulls the `LLAMA_3_2_1B_INST_Q4_0` weights from the QVAC registry into the local cache (about 1 GB, once).
+
+After those two steps the machine can be disconnected: the page is served from `127.0.0.1`, the weights are on disk, and both the rule engine and the model answer with no outbound traffic. Nothing else in the app opens a socket — there is no analytics, no telemetry, no update check.
+
+## What was built during the event
+
+Everything in this repository was written during the hackathon build window (24–30 October 2026), starting from an empty directory: the rule engine, the link forensics, the QVAC model lifecycle and prompt, the HTTP server, the single-page UI, the test suite and the demo recording.
+
+Third-party work is used as libraries only, not as copied source: `@qvac/sdk` (Apache-2.0) for local inference, the Llama 3.2 1B Instruct Q4_0 weights from the QVAC registry, and Node.js built-ins. No starter template, no scaffolded app, no code from another hackathon project. The README, tests and UI text are original.
+
+## Reproduce the offline demo
+
+The recording was made on the test machine with the browser's DNS resolver pointed at a black hole, so every host except loopback fails to resolve. To repeat it:
+
+```bash
+# 1. warm the cache once, then stop the app
+npm start        # waits for the model download to finish, then Ctrl-C
+
+# 2. disconnect the machine (disable the network adapter, unplug the cable,
+#    or turn Wi-Fi off) and confirm the machine really is offline
+curl -s -m 3 https://example.com   # fails: could not resolve host
+
+# 3. start the app while still offline and scan a message
+npm start
+```
+
+The recording itself used the softer version of the same idea: the browser was started with `--host-resolver-rules="MAP * 0.0.0.0, EXCLUDE 127.0.0.1"`, so every host except loopback resolved to a black hole. Both variants prove the same thing — after the one-time model download the app never opens a socket, so cutting the network changes nothing. The rule tests need no model and no network at all: `npm test` prints `# pass 11`.
 
 ## Limits, stated plainly
 

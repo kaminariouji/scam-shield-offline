@@ -38,6 +38,26 @@ const CASES = [
     text: 'Hi, this is Dr. Otieno from the clinic. Your appointment on Tuesday is confirmed for 10am.',
     verdict: 'low',
     mustInclude: []
+  },
+  {
+    // Regression: a bare number after "send" used to miss, because a trailing
+    // word boundary never fires between the digits of 2000.
+    name: 'advance-fee prize with a bare amount',
+    text: 'Congratulations! You won 50000. Send 2000 to claim your prize. Call 0700 now.',
+    verdict: 'high',
+    mustInclude: ['prize', 'money_request', 'advance_fee']
+  },
+  {
+    name: 'advance-fee prize in Swahili',
+    text: 'Hongera! Umeshinda 100000. Tuma 2000 kupata zawadi yako.',
+    verdict: 'high',
+    mustInclude: ['prize', 'money_request', 'advance_fee']
+  },
+  {
+    name: 'advance-fee prize in Indonesian',
+    text: 'Selamat! Anda menang hadiah 10 juta. Kirim 500000 untuk klaim hadiah.',
+    verdict: 'high',
+    mustInclude: ['prize', 'money_request', 'advance_fee']
   }
 ]
 
